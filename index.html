@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050a12"><title>IPSCMC • Network Status</title>
+<link rel="icon" href="assets/ipsmc-logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body><div class="ambient a"></div><div class="ambient b"></div><main class="shell">
+<header><a class="brand" href="./"><img src="assets/ipsmc-logo.jpg"><span><b>IPSCMC</b><small>LIFESTEAL NETWORK</small></span></a>
+<nav><span class="live"><i></i> LIVE</span><a class="discord" href="https://discord.gg/ipscmc" target="_blank">Discord ↗</a></nav></header>
+
+<section class="hero"><div><p class="eyebrow">NETWORK STATUS</p><h1>Everything you need to know.</h1><p>Live Minecraft status, community statistics, latency, MOTD and uptime — all in one place.</p></div>
+<div id="overall" class="overall"><i></i><span>Checking systems…</span></div></section>
+
+<section class="grid two">
+<article class="card"><div class="head"><div><label>MINECRAFT SERVER</label><h2>IPSCMC</h2></div><span id="mcBadge" class="badge">CHECKING</span></div>
+<div class="server"><img id="serverIcon" src="assets/ipsmc-logo.jpg"><div><b>play.ipsmc.fun</b><small>Java Edition • Port 19145</small></div></div>
+<div class="stats">
+<div><span>◉</span><small>PLAYERS</small><b id="players">—</b></div>
+<div><span>⌁</span><small>LIVE PING</small><b id="ping">—</b></div>
+<div><span>◆</span><small>VERSION</small><b id="version">—</b></div></div>
+<div class="motd"><label>SERVER MOTD</label><p id="motd">Waiting for server response…</p></div>
+<div class="foot"><span>Last checked <b id="checked">—</b></span><b>play.ipsmc.fun:19145</b></div></article>
+
+<article class="card discord-card"><div class="head"><div><label>DISCORD COMMUNITY</label><h2>IPSCMC Discord</h2></div><span class="dmark">D</span></div>
+<div class="discordHero"><div>✦</div><section><b id="discordName">IPSCMC</b><small>Community server</small></section></div>
+<div class="stats twoStats"><div><span>♟</span><small>MEMBERS</small><b id="members">—</b></div><div><span class="green">●</span><small>ONLINE NOW</small><b id="online">—</b></div></div>
+<p class="approx"><i></i> Live community count • approximate</p>
+<a class="join" href="https://discord.gg/ipscmc" target="_blank">Join the IPSCMC Discord <b>→</b></a></article>
+</section>
+
+<section class="grid two lower">
+<article class="card"><div class="head"><div><label>UPTIME</label><h2>Server reliability</h2></div><span class="source">GitHub monitor</span></div>
+<div class="uptime"><div><small>24 HOURS</small><b id="u24">—</b></div><div><small>7 DAYS</small><b id="u7">—</b></div><div><small>30 DAYS</small><b id="u30">—</b></div></div>
+<div class="bar"><i id="bar"></i></div><div class="foot"><span id="upmeta">Monitoring starts after the first GitHub Action check.</span><a href="https://status.ipsmc.fun" target="_blank">Full status page ↗</a></div></article>
+<article class="card"><label>QUICK INFO</label><div class="quick"><div><span>Server</span><b>play.ipsmc.fun:19145</b></div><div><span>Platform</span><b>Paper / Java</b></div><div><span>Discord</span><b>discord.gg/ipscmc</b></div><div><span>Refresh</span><b>30 seconds</b></div></div></article>
+</section>
+<footer><span>© <span id="year"></span> IPSCMC Network</span><span>Built for the community • <a href="https://status.ipsmc.fun" target="_blank">Status history</a></span></footer>
+</main><script src="app.js"></script></body></html>
