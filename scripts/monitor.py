@@ -34,7 +34,7 @@ version = ""
 try:
     d = get(
         "https://api.mcstatus.io/v2/status/java/"
-        "play.ipscmc.fun:19145?query=false"
+        "80.225.228.201:19145?query=false"
     )
 
     online = bool(d.get("online", False))
@@ -46,20 +46,15 @@ try:
         max_players = player_data.get("max", 0) or 0
 
         motd_data = d.get("motd", {}) or {}
-        motd = (
-            motd_data.get("clean")
-            or motd_data.get("raw")
-            or ""
-        )
+        motd = motd_data.get("clean") or motd_data.get("raw") or ""
 
         version_data = d.get("version", {}) or {}
         version = version_data.get("name", "") or ""
 
-        # mcstatus.io's latency is measured from their infrastructure.
         latency = d.get("latency")
 
 except Exception as e:
-    print("Minecraft check failed:", e)
+    print("Minecraft check failed:", repr(e))
 
 
 # -------------------------
@@ -81,7 +76,7 @@ try:
     discord_online = guild.get("approximate_presence_count")
 
 except Exception as e:
-    print("Discord check failed:", e)
+    print("Discord check failed:", repr(e))
 
 
 # -------------------------
@@ -135,23 +130,17 @@ def uptime(days):
 
 status = {
     "lastChecked": now.isoformat(),
-
     "online": online,
-
     "players": players,
     "maxPlayers": max_players,
-
     "latency": latency,
-
     "motd": motd,
     "version": version,
-
     "uptime": {
         "24h": uptime(1),
         "7d": uptime(7),
         "30d": uptime(30)
     },
-
     "discord": {
         "members": discord_members,
         "online": discord_online
