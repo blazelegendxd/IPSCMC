@@ -8,22 +8,22 @@ DATA = ROOT / "data"
 HISTORY = DATA / "history.json"
 STATUS = DATA / "status.json"
 
+MINECRAFT_HOST = "play.ipsmc.fun:19145"
+DISCORD_INVITE = "ipscmc"
 
-def get(url):
-    req = urllib.request.Request(
+
+def get_json(url, timeout=20):
+    request = urllib.request.Request(
         url,
-        headers={"User-Agent": "IPSCMC-Status/1.0"}
+        headers={"User-Agent": "IPSCMC-Status/2.0"},
     )
-    with urllib.request.urlopen(req, timeout=15) as response:
-        return json.loads(response.read())
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
 
 
 now = datetime.now(timezone.utc)
 
-# -------------------------
-# Minecraft
-# -------------------------
-
+# Minecraft status
 online = False
 players = 0
 max_players = 0
@@ -32,60 +32,57 @@ motd = ""
 version = ""
 
 try:
-    d = get(
+    data = get_json(
         "https://api.mcstatus.io/v2/status/java/"
-        "80.225.228.201:19145?query=false"
+        + MINECRAFT_HOST
+        + "?query=false"
     )
 
-    online = bool(d.get("online", False))
+    online = bool(data.get("online", False))
+    player_data = data.get("players") or {}
+    players = int(player_data.get("online") or 0)
+    max_players = int(player_data.get("max") or 0)
 
-    if online:
-        player_data = d.get("players", {}) or {}
+    motd_data = data.get("motd") or {}
+    motd = (
+        motd_data.get("clean")
+        or motd_data.get("raw")
+        or ""
+    )
 
-        players = player_data.get("online", 0) or 0
-        max_players = player_data.get("max", 0) or 0
+    version_data = data.get("version") or {}
+    version = version_data.get("name") or ""
+    latency = data.get("latency")
 
-        motd_data = d.get("motd", {}) or {}
-        motd = motd_data.get("clean") or motd_data.get("raw") or ""
-
-        version_data = d.get("version", {}) or {}
-        version = version_data.get("name", "") or ""
-
-        latency = d.get("latency")
-
-except Exception as e:
-    print("Minecraft check failed:", repr(e))
+except Exception as error:
+    print("Minecraft check failed:", repr(error))
 
 
-# -------------------------
-# Discord
-# -------------------------
-
+# Discord invite counts
 discord_members = None
 discord_online = None
 
 try:
-    d = get(
+    data = get_json(
         "https://discord.com/api/v10/invites/"
-        "ipscmc?with_counts=true"
+        + DISCORD_INVITE
+        + "?with_counts=true"
     )
 
-    guild = d.get("guild", {}) or {}
-
+    guild = data.get("guild") or {}
     discord_members = guild.get("approximate_member_count")
     discord_online = guild.get("approximate_presence_count")
 
-except Exception as e:
-    print("Discord check failed:", repr(e))
+except Exception as error:
+    print("Discord check failed:", repr(error))
 
 
-# -------------------------
-# Uptime history
-# -------------------------
-
+# Load and update uptime history
 if HISTORY.exists():
     try:
-        history = json.loads(HISTORY.read_text())
+        history = json.loads(HISTORY.read_text(encoding="utf-8"))
+        if not isinstance(history, list):
+            history = []
     except Exception:
         history = []
 else:
@@ -93,40 +90,43 @@ else:
 
 history.append({
     "ts": now.isoformat(),
-    "online": online
+    "online": online,
 })
 
 cutoff = now - timedelta(days=31)
+clean_history = []
 
-history = [
-    x for x in history
-    if datetime.fromisoformat(x["ts"]) >= cutoff
-]
+for item in history:
+    try:
+        timestamp = datetime.fromisoformat(item["ts"])
+        if timestamp >= cutoff:
+            clean_history.append(item)
+    except (KeyError, TypeError, ValueError):
+        continue
+
+history = clean_history
 
 
 def uptime(days):
     start = now - timedelta(days=days)
+    rows = []
 
-    rows = [
-        x for x in history
-        if datetime.fromisoformat(x["ts"]) >= start
-    ]
+    for item in history:
+        try:
+            timestamp = datetime.fromisoformat(item["ts"])
+            if timestamp >= start:
+                rows.append(item)
+        except (KeyError, TypeError, ValueError):
+            continue
 
     if not rows:
         return None
 
-    percentage = (
-        100
-        * sum(1 for x in rows if x["online"])
-        / len(rows)
+    return round(
+        100 * sum(1 for item in rows if item.get("online") is True) / len(rows),
+        2,
     )
 
-    return round(percentage, 2)
-
-
-# -------------------------
-# Save status
-# -------------------------
 
 status = {
     "lastChecked": now.isoformat(),
@@ -139,22 +139,16 @@ status = {
     "uptime": {
         "24h": uptime(1),
         "7d": uptime(7),
-        "30d": uptime(30)
+        "30d": uptime(30),
     },
     "discord": {
         "members": discord_members,
-        "online": discord_online
-    }
+        "online": discord_online,
+    },
 }
 
-DATA.mkdir(exist_ok=True)
-
-HISTORY.write_text(
-    json.dumps(history, indent=2)
-)
-
-STATUS.write_text(
-    json.dumps(status, indent=2)
-)
+DATA.mkdir(parents=True, exist_ok=True)
+HISTORY.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
+STATUS.write_text(json.dumps(status, indent=2) + "\n", encoding="utf-8")
 
 print(json.dumps(status, indent=2))
