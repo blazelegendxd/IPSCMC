@@ -1,20 +1,171 @@
-import json,urllib.request
+import json
+import urllib.request
 from pathlib import Path
-from datetime import datetime,timezone,timedelta
-ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/"data"; H=DATA/"history.json"
-def get(u):
- r=urllib.request.Request(u,headers={"User-Agent":"IPSCMC-Status/1.0"})
- with urllib.request.urlopen(r,timeout=12) as x:return json.loads(x.read())
-now=datetime.now(timezone.utc)
+from datetime import datetime, timezone, timedelta
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data"
+HISTORY = DATA / "history.json"
+STATUS = DATA / "status.json"
+
+
+def get(url):
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "IPSCMC-Status/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=15) as response:
+        return json.loads(response.read())
+
+
+now = datetime.now(timezone.utc)
+
+# -------------------------
+# Minecraft
+# -------------------------
+
+online = False
+players = 0
+max_players = 0
+latency = None
+motd = ""
+version = ""
+
 try:
- d=get("https://api.mcstatus.io/v2/status/java/play.ipsmc.fun:19145?query=false"); online=bool(d.get("online")); latency=d.get("latency"); players=(d.get("players") or {}).get("online",0)
-except: online=False;latency=None;players=0
+    d = get(
+        "https://api.mcstatus.io/v2/status/java/"
+        "play.ipscmc.fun:19145?query=false"
+    )
+
+    online = bool(d.get("online", False))
+
+    if online:
+        player_data = d.get("players", {}) or {}
+
+        players = player_data.get("online", 0) or 0
+        max_players = player_data.get("max", 0) or 0
+
+        motd_data = d.get("motd", {}) or {}
+        motd = (
+            motd_data.get("clean")
+            or motd_data.get("raw")
+            or ""
+        )
+
+        version_data = d.get("version", {}) or {}
+        version = version_data.get("name", "") or ""
+
+        # mcstatus.io's latency is measured from their infrastructure.
+        latency = d.get("latency")
+
+except Exception as e:
+    print("Minecraft check failed:", e)
+
+
+# -------------------------
+# Discord
+# -------------------------
+
+discord_members = None
+discord_online = None
+
 try:
- d=get("https://discord.com/api/v10/invites/ipscmc?with_counts=true");g=d.get("guild") or {};members=g.get("approximate_member_count");online_dc=g.get("approximate_presence_count")
-except: members=online_dc=None
-hist=json.loads(H.read_text()) if H.exists() else [];hist.append({"ts":now.isoformat(),"online":online});cut=now-timedelta(days=31);hist=[x for x in hist if datetime.fromisoformat(x["ts"])>=cut]
-def pct(days):
- rows=[x for x in hist if datetime.fromisoformat(x["ts"])>=now-timedelta(days=days)]
- return f'{100*sum(x["online"] for x in rows)/len(rows):.2f}%' if rows else "—"
-status={"lastChecked":now.isoformat(),"uptime":{"24h":pct(1),"7d":pct(7),"30d":pct(30)},"online":online,"latency":latency,"players":players,"discord":{"members":members,"online":online_dc}}
-H.write_text(json.dumps(hist,indent=2));(DATA/"status.json").write_text(json.dumps(status,indent=2));print(json.dumps(status,indent=2))
+    d = get(
+        "https://discord.com/api/v10/invites/"
+        "ipscmc?with_counts=true"
+    )
+
+    guild = d.get("guild", {}) or {}
+
+    discord_members = guild.get("approximate_member_count")
+    discord_online = guild.get("approximate_presence_count")
+
+except Exception as e:
+    print("Discord check failed:", e)
+
+
+# -------------------------
+# Uptime history
+# -------------------------
+
+if HISTORY.exists():
+    try:
+        history = json.loads(HISTORY.read_text())
+    except Exception:
+        history = []
+else:
+    history = []
+
+history.append({
+    "ts": now.isoformat(),
+    "online": online
+})
+
+cutoff = now - timedelta(days=31)
+
+history = [
+    x for x in history
+    if datetime.fromisoformat(x["ts"]) >= cutoff
+]
+
+
+def uptime(days):
+    start = now - timedelta(days=days)
+
+    rows = [
+        x for x in history
+        if datetime.fromisoformat(x["ts"]) >= start
+    ]
+
+    if not rows:
+        return None
+
+    percentage = (
+        100
+        * sum(1 for x in rows if x["online"])
+        / len(rows)
+    )
+
+    return round(percentage, 2)
+
+
+# -------------------------
+# Save status
+# -------------------------
+
+status = {
+    "lastChecked": now.isoformat(),
+
+    "online": online,
+
+    "players": players,
+    "maxPlayers": max_players,
+
+    "latency": latency,
+
+    "motd": motd,
+    "version": version,
+
+    "uptime": {
+        "24h": uptime(1),
+        "7d": uptime(7),
+        "30d": uptime(30)
+    },
+
+    "discord": {
+        "members": discord_members,
+        "online": discord_online
+    }
+}
+
+DATA.mkdir(exist_ok=True)
+
+HISTORY.write_text(
+    json.dumps(history, indent=2)
+)
+
+STATUS.write_text(
+    json.dumps(status, indent=2)
+)
+
+print(json.dumps(status, indent=2))
