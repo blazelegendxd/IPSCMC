@@ -1,13 +1,16 @@
 {
-  "lastChecked": "2026-08-31T10:18:49.220187+00:00",
-  "uptime": {
-    "24h": "0.00%",
-    "7d": "0.00%",
-    "30d": "0.00%"
-  },
+  "lastChecked": "2026-08-31T10:27:17.921569+00:00",
   "online": false,
-  "latency": null,
   "players": 0,
+  "maxPlayers": 0,
+  "latency": null,
+  "motd": "",
+  "version": "",
+  "uptime": {
+    "24h": 0.0,
+    "7d": 0.0,
+    "30d": 0.0
+  },
   "discord": {
     "members": null,
     "online": null
