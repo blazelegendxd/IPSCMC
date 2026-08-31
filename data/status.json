@@ -1,8 +1,15 @@
 {
-  "lastChecked": null,
+  "lastChecked": "2026-08-31T10:18:49.220187+00:00",
   "uptime": {
-    "24h": "\u2014",
-    "7d": "\u2014",
-    "30d": "\u2014"
+    "24h": "0.00%",
+    "7d": "0.00%",
+    "30d": "0.00%"
+  },
+  "online": false,
+  "latency": null,
+  "players": 0,
+  "discord": {
+    "members": null,
+    "online": null
   }
 }
